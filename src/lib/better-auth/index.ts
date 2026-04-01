@@ -1,9 +1,14 @@
 import { betterAuth } from "better-auth";
+import { emailOTP } from "better-auth/plugins";
+import { admin } from "better-auth/plugins";
+import { Resend } from "resend";
 import { betterAuthOptions } from "./options";
 
 const KV_MIN_TTL = 60;
 
 export const auth = (env: CloudflareBindings) => {
+  const resend = new Resend(env.RESEND_API_KEY);
+
   return betterAuth({
     ...betterAuthOptions,
     database: env.DB,
@@ -21,8 +26,28 @@ export const auth = (env: CloudflareBindings) => {
     session: {
       cookieCache: {
         enabled: true,
-        maxAge: 5 * 60, // 5 minutes
+        maxAge: 5 * 60,
       },
     },
+    plugins: [
+      emailOTP({
+        otpLength: 6,
+        expiresIn: 600,
+        sendVerificationOTP: async ({ email, otp, type }) => {
+          await resend.emails.send({
+            from: "Auth <noreply@rollingsagas.com>",
+            to: [email],
+            subject:
+              type === "sign-in"
+                ? `Your sign-in code: ${otp}`
+                : type === "email-verification"
+                  ? `Verify your email: ${otp}`
+                  : `Your verification code: ${otp}`,
+            text: `Your verification code is: ${otp}\n\nThis code expires in 10 minutes.`,
+          });
+        },
+      }),
+      admin(),
+    ],
   });
 };
