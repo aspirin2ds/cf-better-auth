@@ -5,5 +5,6 @@ export const betterAuthOptions: BetterAuthOptions = {
   basePath: "/api/auth",
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
   },
 };

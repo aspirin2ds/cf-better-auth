@@ -29,13 +29,18 @@ export const auth = (env: CloudflareBindings) => {
         maxAge: 5 * 60,
       },
     },
+    emailVerification: {
+      sendOnSignUp: true,
+      autoSignInAfterVerification: true,
+    },
     plugins: [
       emailOTP({
         otpLength: 6,
         expiresIn: 600,
+        overrideDefaultEmailVerification: true,
         sendVerificationOTP: async ({ email, otp, type }) => {
           await resend.emails.send({
-            from: "Auth <noreply@rollingsagas.com>",
+            from: "Auth <noreply@auth.rollingsagas.com>",
             to: [email],
             subject:
               type === "sign-in"
